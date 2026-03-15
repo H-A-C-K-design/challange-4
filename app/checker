@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+"""
+checker - flag verification binary
+Participants are expected to reverse engineer this to understand the XOR scheme.
+
+Compile hint for challenge setup:
+  python3 -m py_compile checker  (produces checker.pyc for distribution)
+  Strip the source and distribute only the .pyc
+
+Logic (intentionally visible here for challenge author only):
+  - Reads flag from argv[1]
+  - XOR each byte with (len(expected) % 256)
+  - Compares against pre-encoded expected bytes
+"""
+import sys
+
+# Pre-XOR'd expected bytes (key=26, flag="TRACECTF{count_your_steps}")
+_E = [
+    0x6a,0x7c,0x4f,0x4b,0x45,0x4b,0x5e,0x5a,  # TRACECTF
+    0x57,                                        # {
+    0x59,0x4b,0x5f,0x5c,0x5e,0x57,              # count_
+    0x79,0x4b,0x5f,0x7c,                        # your
+    0x57,                                        # _
+    0x65,0x5e,0x4b,0x70,0x65,                   # steps
+    0x53                                         # }
+]
+
+def _xor(s, k):
+    return [ord(c) ^ (k % 256) for c in s]
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: checker <flag>")
+        sys.exit(1)
+
+    candidate = sys.argv[1]
+    k = 26  # len("TRACECTF{count_your_steps}") - RE target must deduce this
+
+    result = _xor(candidate, k)
+
+    if result == _E:
+        print("ACCESS GRANTED")
+        sys.exit(0)
+    else:
+        print("ACCESS DENIED")
+        # Leak partial match count as a side-channel hint
+        matches = sum(1 for a, b in zip(result, _E) if a == b)
+        print(f"Partial match: {matches}/{len(_E)} bytes correct")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

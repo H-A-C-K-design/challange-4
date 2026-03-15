@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - The Unseen Path</title>
+  <style>
+    body { background: #0d0d0d; color: #c0c0c0; font-family: monospace; padding: 2rem; }
+    h1 { color: #00ff99; }
+    .panel { border: 1px solid #333; padding: 1rem; margin: 1rem 0; max-width: 600px; }
+    input, textarea { background: #1a1a1a; border: 1px solid #444; color: #eee; padding: 0.4rem; width: 100%; box-sizing: border-box; }
+    button { padding: 0.4rem 1rem; background: #00ff99; color: #000; border: none; cursor: pointer; margin-top: 0.5rem; }
+    pre { color: #aaa; font-size: 0.85rem; white-space: pre-wrap; }
+    .role-admin { color: #ff9900; }
+    .role-user  { color: #555555; }
+  </style>
+</head>
+<body>
+  <h1>// DASHBOARD</h1>
+  <p>Logged in as: <strong>{{ user }}</strong> &nbsp; Role: <span class="role-{{ role }}">{{ role }}</span></p>
+
+  <div class="panel">
+    <h3>Network Probe</h3>
+    <p>Ping a host to check connectivity.</p>
+    <input type="text" id="host" placeholder="e.g. 127.0.0.1" />
+    <button onclick="probe()">Probe</button>
+    <pre id="probe-out"></pre>
+  </div>
+
+  {% if role == 'admin' %}
+  <div class="panel">
+    <h3>Secret Vault</h3>
+    <button onclick="loadSecrets()">Load Secrets</button>
+    <pre id="secrets-out"></pre>
+    <p style="color:#555;font-size:0.75rem;">
+      <!-- fragments are encoded. fragment_a is base64. fragment_b is rot13. -->
+      <!-- the checker at /app/checker validates the assembled flag. -->
+      <!-- XOR key = length of the expected flag string -->
+    </p>
+  </div>
+  {% endif %}
+
+  <script>
+    async function probe() {
+      const host = document.getElementById("host").value;
+      const res = await fetch("/api/ping", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({host})
+      });
+      const data = await res.json();
+      document.getElementById("probe-out").textContent = data.output || data.error;
+    }
+
+    async function loadSecrets() {
+      const res = await fetch("/api/secrets");
+      const data = await res.json();
+      document.getElementById("secrets-out").textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
